@@ -34,6 +34,7 @@ from . import (
     DbApp,
     UpdateApp,
     ZipCollectApp,
+    RossApp,
 )
 
 aliases = {}
@@ -233,7 +234,16 @@ class NbGraderApp(NbGrader):
                 Update nbgrader cell metadata to the most recent version.
                 """
             ).strip()
-        )
+        ),
+        ross=(
+            RossApp,
+            dedent(
+                """
+                Report On Submission Similarity (ROSS). Results viewable in
+                the formgrade extension.
+                """
+            ).strip()
+        ),
     )
 
     @default("classes")

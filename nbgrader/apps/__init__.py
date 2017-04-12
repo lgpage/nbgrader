@@ -18,6 +18,7 @@ from .dbapp import (
     DbAssignmentAddApp, DbAssignmentRemoveApp, DbAssignmentImportApp, DbAssignmentListApp)
 from .updateapp import UpdateApp
 from .zipcollectapp import ZipCollectApp
+from .rossapp import RossApp
 from .nbgraderapp import NbGraderApp
 
 
@@ -50,4 +51,5 @@ __all__ = [
     'DbAssignmentListApp',
     'UpdateApp',
     'ZipCollectApp',
+    'RossApp',
 ]
