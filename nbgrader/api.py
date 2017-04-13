@@ -2482,3 +2482,136 @@ class Gradebook(object):
             "failed_tests", "flagged"
         ]
         return [dict(zip(keys, x)) for x in submissions]
+
+    #### Notebook Comparisons
+
+    def add_notebook_comparison(self, notebook, assignment, students, **kwargs):
+        """Add a new notebook comparison of a submitted notebook for two
+        students.
+
+        Parameters
+        ----------
+        notebook : string
+            the name of a notebook
+        assignment : string
+            the name of an assignment
+        students : list
+            the two unique student id strings
+
+        Returns
+        -------
+        comparison : :class:`~nbgrader.api.NotebookComparison`
+
+        """
+        if len(students) != 2 or students[0] == students[1]:
+            raise ValueError(students, "Expected two unique student ids")
+
+        notebooks = [
+            self.find_submission_notebook(notebook, assignment, students[0]),
+            self.find_submission_notebook(notebook, assignment, students[1])
+        ]
+        assignment = self.find_assignment(assignment)
+
+        try:
+            comparison = NotebookComparison(
+                assignment=assignment,
+                notebooks=notebooks,
+                **kwargs,
+            )
+            self.db.add(comparison)
+            self.db.commit()
+
+        except (IntegrityError, FlushError) as e:
+            self.db.rollback()
+            raise InvalidEntry(*e.args)
+
+        return comparison
+
+    def find_notebook_comparison(self, notebook, assignment, students):
+        """Find an existing notebook comparison of a submitted notebook for
+        two students.
+
+        Parameters
+        ----------
+        notebook : string
+            the name of a notebook
+        assignment : string
+            the name of an assignment
+        students : list
+            the two unique student id strings
+
+        Returns
+        -------
+        comparison : :class:`~nbgrader.api.NotebookComparison`
+
+        """
+        if len(students) != 2 or students[0] == students[1]:
+            raise ValueError(students, "Expected two unique student ids")
+
+        # XXX How to do this with a query ??? :(
+        notebooks = [
+            self.find_submission_notebook(notebook, assignment, students[0]),
+            self.find_submission_notebook(notebook, assignment, students[1])
+        ]
+        for comp1 in notebooks[0].comparisons or []:
+            for comp2 in notebooks[1].comparisons or []:
+                if comp1 == comp2:
+                    return comp1
+        else:
+            raise MissingEntry(
+                "No comparison found for students: {}".format(students))
+
+    def update_or_create_notebook_comparison(self, notebook, assignment, students, **kwargs):
+        """Update an existing notebook comparison of a submitted notebook for
+        two students.
+
+        Parameters
+        ----------
+        notebook : string
+            the name of a notebook
+        assignment : string
+            the name of an assignment
+        students : list
+            the two unique student id strings
+
+        Returns
+        -------
+        comparison : :class:`~nbgrader.api.NotebookComparison`
+
+        """
+        try:
+            comparison = self.find_notebook_comparison(
+                notebook, assignment, students)
+        except MissingEntry:
+            comparison = self.add_notebook_comparison(
+                notebook, assignment, students, **kwargs)
+        else:
+            for attr in kwargs:
+                setattr(comparison, attr, kwargs[attr])
+            try:
+                self.db.commit()
+            except (IntegrityError, FlushError) as e:
+                self.db.rollback()
+                raise InvalidEntry(*e.args)
+        return comparison
+
+    def notebook_comparisons(self, notebook, assignment, student):
+        """Return all notebook comparisons of a submitted notebook
+        for a student.
+
+        Parameters
+        ----------
+        notebook : string
+            the name of a notebook
+        assignment : string
+            the name of an assignment
+        student : string
+            the unique student id string
+
+        Returns
+        -------
+        comparisons : A list of :class:`~nbgrader.api.NotebookComparison`
+
+        """
+        notebook = self.find_submission_notebook(notebook, assignment, student)
+        return notebook.comparisons
