@@ -588,6 +588,11 @@ class SubmittedNotebook(Base):
     #: by the :class:`~nbgrader.plugins.LateSubmissionPlugin`.
     late_submission_penalty = Column(Float(0))
 
+    #: A collection of notebook comparisons used for similarity checking,
+    #: represented by :class:`~nbgrader.api.NotebookComparison` objects
+    comparisons = relationship('NotebookComparison',
+        secondary='notebook_comparison_link')
+
     def to_dict(self):
         """Convert the submitted notebook object to a JSON-friendly dictionary
         representation. Note that this includes a key for ``student`` which is
@@ -792,10 +797,25 @@ class Comment(Base):
             self.assignment.name, self.notebook.name, self.name, self.student.id)
 
 
+class NotebookComparisonLink(Base):
+    """Database representation of the submitted notebooks to notebook
+    comparison link for the many-to-many relationship."""
+
+    __tablename__ = "notebook_comparison_link"
+    __table_args__ = (
+        UniqueConstraint('submitted_notebook_id', 'notebook_comparison_id'),)
+
+    submitted_notebook_id = Column(
+        String(32), ForeignKey('submitted_notebook.id'), primary_key=True)
+    notebook_comparison_id = Column(
+        String(32), ForeignKey('notebook_comparison.id'), primary_key=True)
+
+
 class NotebookComparison(Base):
+    """Database representation of a notebook comparison for two submitted
+    notebooks."""
 
     __tablename__ = "notebook_comparison"
-    __table_args__ = (UniqueConstraint('source_id', 'target_id'),)
 
     #: Unique id of the comment (automatically generated)
     id = Column(String(32), primary_key=True, default=new_uuid)
@@ -807,39 +827,29 @@ class NotebookComparison(Base):
     #: Unique id of :attr:`~nbgrader.api.Comparison.assignment`
     assignment_id = Column(String(32), ForeignKey('assignment.id'))
 
-    #: The submitted version of the notebook, represented by a
-    #: :class:`~nbgrader.api.SubmittedNotebook` object
-    source = None
-
-    #: Unique id of :attr:`~nbgrader.api.Comparison.source`
-    source_id = Column(String(32), ForeignKey('submitted_notebook.id'))
-
-    #: The submitted version of the notebook, represented by a
-    #: :class:`~nbgrader.api.SubmittedNotebook` object
-    target = None
-
-    #: Unique id of :attr:`~nbgrader.api.Comparison.target`
-    target_id = Column(String(32), ForeignKey('submitted_notebook.id'))
+    #: A collection of two notebooks used for this comparison,
+    #: represented by :class:`~nbgrader.api.SubmittedNotebook` objects
+    notebooks = relationship('SubmittedNotebook',
+        secondary='notebook_comparison_link', back_populates='comparisons')
 
     #: The Jaccard similarity metric
-    jaccard_metric = Column(Float(0))
+    wshingling_src_metric = Column(Float(0))
 
     def to_dict(self):
         return dict(
-            name=self.source.name,
             assignment=self.assignment.name,
-            source_id=self.source.id,
-            target_id=self.target.id,
-            students=[self.source.student.id, self.target.student.id],
+            notebook_ids=[x.id for x in self.notebooks],
+            notebook_names=[x.name for x in self.notebooks],
+            students=[x.student.id for x in self.notebooks],
             metrics=dict(
-                jaccard=self.jaccard_metric,
+                wshingling_src=self.wshingling_src_metric,
             )
         )
 
     def __repr__(self):
         return "Comparison<{}/{}: {}<-->{}>".format(
-            self.assignment.name, self.source.name,
-            self.source.student.id, self.target.student.id
+            self.assignment.name, self.notebooks[0].name,
+            self.notebooks[0].student.id, self.notebooks[1].student.id
         )
 
 
