@@ -792,6 +792,57 @@ class Comment(Base):
             self.assignment.name, self.notebook.name, self.name, self.student.id)
 
 
+class NotebookComparison(Base):
+
+    __tablename__ = "notebook_comparison"
+    __table_args__ = (UniqueConstraint('source_id', 'target_id'),)
+
+    #: Unique id of the comment (automatically generated)
+    id = Column(String(32), primary_key=True, default=new_uuid)
+
+    #: The master version of this assignment, represented by a
+    #: :class:`~nbgrader.api.Assignment` object
+    assignment = None
+
+    #: Unique id of :attr:`~nbgrader.api.Comparison.assignment`
+    assignment_id = Column(String(32), ForeignKey('assignment.id'))
+
+    #: The submitted version of the notebook, represented by a
+    #: :class:`~nbgrader.api.SubmittedNotebook` object
+    source = None
+
+    #: Unique id of :attr:`~nbgrader.api.Comparison.source`
+    source_id = Column(String(32), ForeignKey('submitted_notebook.id'))
+
+    #: The submitted version of the notebook, represented by a
+    #: :class:`~nbgrader.api.SubmittedNotebook` object
+    target = None
+
+    #: Unique id of :attr:`~nbgrader.api.Comparison.target`
+    target_id = Column(String(32), ForeignKey('submitted_notebook.id'))
+
+    #: The Jaccard similarity metric
+    jaccard_metric = Column(Float(0))
+
+    def to_dict(self):
+        return dict(
+            name=self.source.name,
+            assignment=self.assignment.name,
+            source_id=self.source.id,
+            target_id=self.target.id,
+            students=[self.source.student.id, self.target.student.id],
+            metrics=dict(
+                jaccard=self.jaccard_metric,
+            )
+        )
+
+    def __repr__(self):
+        return "Comparison<{}/{}: {}<-->{}>".format(
+            self.assignment.name, self.source.name,
+            self.source.student.id, self.target.student.id
+        )
+
+
 ## Needs manual grade
 
 SubmittedNotebook.needs_manual_grade = column_property(

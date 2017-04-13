@@ -1223,3 +1223,39 @@ def test_comment_to_dict(submissions):
 
         # make sure it can be JSONified
         json.dumps(cd)
+
+
+def test_notebook_comparison(db):
+    now = datetime.datetime.utcnow()
+    a = api.Assignment(name='foo', duedate=now)
+    n = api.Notebook(name='blah', assignment=a)
+    db.add(a)
+    db.commit()
+
+    s = api.Student(id="12345", first_name='Jane', last_name='Doe', email='janedoe@nowhere')
+    sa = api.SubmittedAssignment(assignment=a, student=s)
+    sn1 = api.SubmittedNotebook(assignment=sa, notebook=n)
+    db.add(s)
+    db.add(sn1)
+    db.commit()
+
+    s = api.Student(id="6789", first_name='John', last_name='Doe', email='johndoe@nowhere')
+    sa = api.SubmittedAssignment(assignment=a, student=s)
+    sn2 = api.SubmittedNotebook(assignment=sa, notebook=n)
+    db.add(s)
+    db.add(sn2)
+    db.commit()
+
+    nc = api.NotebookComparison(assignment=a, source=sn1, target=sn2, jaccard_metric=50)
+    db.add(nc)
+    db.commit()
+
+    print(nc)
+
+    d = nc.to_dict()
+    assert d['name'] == 'blah'
+    assert d['assignment'] == 'foo'
+    assert d['source_id'] == sn1.id
+    assert d['target_id'] == sn2.id
+    assert d['students'] == ['12345', '6789']
+    assert d['metrics'] == {'jaccard': 50}
