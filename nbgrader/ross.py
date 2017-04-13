@@ -76,7 +76,7 @@ class RossComparison(object):
     def __init__(self, node1, node2, **kwargs):
         self.ngram_size = kwargs.get('ngram_size', 4)
         self.window_size = kwargs.get('window_size', 3)
-        self.methods = kwargs.get('methods', ['wshingling'])
+        self.methods = kwargs.get('methods', ['wshingling_src'])
         self.nodes = [node1, node2]
         self._metrics = dict()
 
@@ -85,13 +85,13 @@ class RossComparison(object):
         return [x.student_id for x in self.nodes]
 
     @property
-    def wshingling(self):
-        if 'wshingling' not in self._metrics.keys():
-            self._metrics['wshingling'] = 100 * jaccard(
+    def wshingling_src(self):
+        if 'wshingling_src' not in self._metrics.keys():
+            self._metrics['wshingling_src'] = 100 * jaccard(
                 shingle(self.nodes[0].tokens, n=self.ngram_size),
                 shingle(self.nodes[1].tokens, n=self.ngram_size)
             )
-        return self._metrics['wshingling']
+        return self._metrics['wshingling_src']
 
     @property
     def metrics(self):

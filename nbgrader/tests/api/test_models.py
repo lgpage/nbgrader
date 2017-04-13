@@ -1246,7 +1246,7 @@ def test_notebook_comparison(db):
     db.add(sn2)
     db.commit()
 
-    nc = api.NotebookComparison(assignment=a, notebooks=[sn1, sn2], wshingling_src_metric=50)
+    nc = api.NotebookComparison(assignment=a, notebooks=[sn1, sn2], wshingling_src=50)
     db.add(nc)
     db.commit()
 

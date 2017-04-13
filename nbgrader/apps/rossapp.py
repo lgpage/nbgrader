@@ -4,6 +4,7 @@ import re
 from traitlets import List, default
 
 from .baseapp import BaseNbConvertApp, nbconvert_aliases, nbconvert_flags
+from ..api import Gradebook, MissingEntry
 from ..ross import get_notebook_code
 from ..ross import RossNode, RossNotebooks
 
@@ -79,21 +80,23 @@ class RossApp(BaseNbConvertApp):
 
         return collection
 
-    def report_similarity(self, data):
-        for notebook_id, collection in data.items():
-            for comp in collection.comparisons:
-                print(
-                    notebook_id,
-                    comp.nodes[0].student_id,
-                    comp.nodes[1].student_id,
-                    "{:.3f}".format(comp.metrics['wshingling'])
-                )
+    def report_on_similarity(self, data):
+        with Gradebook(self.coursedir.db_url) as gb:
+            for notebook_id, collection in data.items():
+                for comp in collection.comparisons:
+                    nc = gb.update_or_create_notebook_comparison(
+                        notebook_id,
+                        self.assignment_id,
+                        comp.student_ids,
+                        **comp.metrics
+                    )
+                    self.log.info(
+                        "Created/updated similarity metrics: {}".format(nc))
 
     def convert_notebooks(self):
         pass
 
     def start(self):
         data = self.load_notebooks_code()
-        self.report_similarity(data)
+        self.report_on_similarity(data)
         # super(RossApp, self).start()
-

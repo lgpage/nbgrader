@@ -833,7 +833,7 @@ class NotebookComparison(Base):
         secondary='notebook_comparison_link', back_populates='comparisons')
 
     #: The Jaccard similarity metric
-    wshingling_src_metric = Column(Float(0))
+    wshingling_src = Column(Float(0))
 
     def to_dict(self):
         return dict(
@@ -842,7 +842,7 @@ class NotebookComparison(Base):
             notebook_names=[x.name for x in self.notebooks],
             students=[x.student.id for x in self.notebooks],
             metrics=dict(
-                wshingling_src=self.wshingling_src_metric,
+                wshingling_src=self.wshingling_src,
             )
         )
 

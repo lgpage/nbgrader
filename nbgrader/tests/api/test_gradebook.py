@@ -799,7 +799,7 @@ def test_update_or_create_notebook_comparison(assignment):
     n1 = assignment.find_submission_notebook('p1', 'foo', 'hacker123')
     n2 = assignment.find_submission_notebook('p1', 'foo', 'bitdiddle')
     nc1 = assignment.add_notebook_comparison(
-        'p1', 'foo', ['hacker123', 'bitdiddle'], wshingling_src_metric=50)
+        'p1', 'foo', ['hacker123', 'bitdiddle'], wshingling_src=50)
 
     with pytest.raises(ValueError):
         nc2 = assignment.update_or_create_notebook_comparison(
@@ -812,10 +812,10 @@ def test_update_or_create_notebook_comparison(assignment):
             'p1', 'foo', ['hacker123', 'foobar'])
 
     nc2 = assignment.update_or_create_notebook_comparison(
-        'p1', 'foo', ['hacker123', 'bitdiddle'], wshingling_src_metric=20)
+        'p1', 'foo', ['hacker123', 'bitdiddle'], wshingling_src=20)
 
     assert nc2 == nc1
-    assert nc2.wshingling_src_metric == 20
+    assert nc2.wshingling_src == 20
     assert len(n1.comparisons) == 1
     assert len(n2.comparisons) == 1
 
