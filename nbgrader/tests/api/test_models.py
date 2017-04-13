@@ -1246,16 +1246,17 @@ def test_notebook_comparison(db):
     db.add(sn2)
     db.commit()
 
-    nc = api.NotebookComparison(assignment=a, source=sn1, target=sn2, jaccard_metric=50)
+    nc = api.NotebookComparison(assignment=a, notebooks=[sn1, sn2], wshingling_src_metric=50)
     db.add(nc)
     db.commit()
 
-    print(nc)
-
     d = nc.to_dict()
-    assert d['name'] == 'blah'
+    print(d)
+    print(nc)
     assert d['assignment'] == 'foo'
-    assert d['source_id'] == sn1.id
-    assert d['target_id'] == sn2.id
+    assert d['notebook_names'] == ['blah', 'blah']
+    assert d['notebook_ids'] == [sn1.id, sn2.id]
     assert d['students'] == ['12345', '6789']
-    assert d['metrics'] == {'jaccard': 50}
+    assert d['metrics'] == {'wshingling_src': 50}
+    assert sn1.comparisons[0].id == nc.id
+    assert sn2.comparisons[0].id == nc.id

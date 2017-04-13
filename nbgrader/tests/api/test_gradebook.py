@@ -752,3 +752,86 @@ def test_notebook_submission_dicts(assignment):
     a = sorted(submissions, key=lambda x: x["id"])
     b = sorted([x.to_dict() for x in notebook.submissions], key=lambda x: x["id"])
     assert a == b
+
+
+## Test notebook comparisons
+
+def test_add_notebook_comparison(assignment):
+    assignment.add_student('hacker123')
+    assignment.add_student('bitdiddle')
+    assignment.add_submission('foo', 'hacker123')
+    assignment.add_submission('foo', 'bitdiddle')
+    n1 = assignment.find_submission_notebook('p1', 'foo', 'hacker123')
+    n2 = assignment.find_submission_notebook('p1', 'foo', 'bitdiddle')
+
+    with pytest.raises(ValueError):
+        nc = assignment.add_notebook_comparison('p1', 'foo', ['hacker123'])
+    with pytest.raises(ValueError):
+        nc = assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'hacker123'])
+    with pytest.raises(MissingEntry):
+        nc = assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'foobar'])
+
+    nc = assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
+
+    assert nc.notebooks[0] == n1
+    assert nc.notebooks[1] == n2
+    assert n1.comparisons[0] == nc
+    assert n2.comparisons[0] == nc
+
+def test_find_notebook_comparison(assignment):
+    assignment.add_student('hacker123')
+    assignment.add_student('bitdiddle')
+    assignment.add_submission('foo', 'hacker123')
+    assignment.add_submission('foo', 'bitdiddle')
+
+    with pytest.raises(MissingEntry):
+        nc2 = assignment.find_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
+
+    nc1 = assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
+    nc2 = assignment.find_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
+    assert nc2 == nc1
+
+def test_update_or_create_notebook_comparison(assignment):
+    assignment.add_student('hacker123')
+    assignment.add_student('bitdiddle')
+    assignment.add_submission('foo', 'hacker123')
+    assignment.add_submission('foo', 'bitdiddle')
+    n1 = assignment.find_submission_notebook('p1', 'foo', 'hacker123')
+    n2 = assignment.find_submission_notebook('p1', 'foo', 'bitdiddle')
+    nc1 = assignment.add_notebook_comparison(
+        'p1', 'foo', ['hacker123', 'bitdiddle'], wshingling_src_metric=50)
+
+    with pytest.raises(ValueError):
+        nc2 = assignment.update_or_create_notebook_comparison(
+            'p1', 'foo', ['hacker123'])
+    with pytest.raises(ValueError):
+        nc2 = assignment.update_or_create_notebook_comparison(
+            'p1', 'foo', ['hacker123', 'hacker123'])
+    with pytest.raises(MissingEntry):
+        nc2 = assignment.update_or_create_notebook_comparison(
+            'p1', 'foo', ['hacker123', 'foobar'])
+
+    nc2 = assignment.update_or_create_notebook_comparison(
+        'p1', 'foo', ['hacker123', 'bitdiddle'], wshingling_src_metric=20)
+
+    assert nc2 == nc1
+    assert nc2.wshingling_src_metric == 20
+    assert len(n1.comparisons) == 1
+    assert len(n2.comparisons) == 1
+
+def test_notebook_comparisons(assignment):
+    assignment.add_student('hacker123')
+    assignment.add_student('bitdiddle')
+    assignment.add_student('foobar')
+    assignment.add_submission('foo', 'hacker123')
+    assignment.add_submission('foo', 'bitdiddle')
+    assignment.add_submission('foo', 'foobar')
+    assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
+    assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'foobar'])
+    ncs1 = assignment.notebook_comparisons('p1', 'foo', 'hacker123')
+    ncs2 = assignment.notebook_comparisons('p1', 'foo', 'bitdiddle')
+    ncs3 = assignment.notebook_comparisons('p1', 'foo', 'foobar')
+
+    assert len(ncs1) == 2
+    assert len(ncs2) == 1
+    assert len(ncs3) == 1
