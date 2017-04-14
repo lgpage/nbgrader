@@ -1260,3 +1260,4 @@ def test_notebook_comparison(db):
     assert d['metrics'] == {'wshingling_src': 50}
     assert sn1.comparisons[0].id == nc.id
     assert sn2.comparisons[0].id == nc.id
+    assert nc.max_similarity == 50

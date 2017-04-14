@@ -588,6 +588,10 @@ class SubmittedNotebook(Base):
     #: by the :class:`~nbgrader.plugins.LateSubmissionPlugin`.
     late_submission_penalty = Column(Float(0))
 
+    #: The max similarity of all notebook comparisions. Updated from
+    #: :class:`~nbgrader.NotebookComparison.max_similarity`.
+    max_similarity = None
+
     #: A collection of notebook comparisons used for similarity checking,
     #: represented by :class:`~nbgrader.api.NotebookComparison` objects
     comparisons = relationship('NotebookComparison',
@@ -835,6 +839,10 @@ class NotebookComparison(Base):
     #: The Jaccard similarity metric
     wshingling_src = Column(Float(0))
 
+    #: The max similarity of all notebook comparision metrics. Updated from
+    #: :class:`~nbgrader.NotebookComparison` metrics.
+    max_similarity = None
+
     def to_dict(self):
         return dict(
             assignment=self.assignment.name,
@@ -1068,6 +1076,13 @@ SubmittedAssignment.late_submission_penalty = column_property(
     select([func.coalesce(func.sum(SubmittedNotebook.late_submission_penalty), 0.0)])\
         .where(SubmittedNotebook.assignment_id == SubmittedAssignment.id)\
         .correlate_except(SubmittedNotebook), deferred=True)
+
+
+## Similarity indicators
+
+# XXX How to filter through a similarity indicator ?? :(
+# - NotebookComparison - max_similarity -> max of all NotebookComparison metrics
+# - SubmittedNotebook - max_similarity -> max of all notebook comparisons - max_similarity
 
 
 class Gradebook(object):
@@ -2555,7 +2570,7 @@ class Gradebook(object):
         ]
         for comp1 in notebooks[0].comparisons or []:
             for comp2 in notebooks[1].comparisons or []:
-                if comp1 == comp2:
+                if comp1 is not None and comp1 == comp2:
                     return comp1
         else:
             raise MissingEntry(
@@ -2595,7 +2610,13 @@ class Gradebook(object):
                 raise InvalidEntry(*e.args)
         return comparison
 
-    def notebook_comparisons(self, notebook, assignment, student):
+    def notebook_comparisons(self, notebook, assignment):
+        return self.db.query(NotebookComparison)\
+            .join(Assignment, Assignment.id == NotebookComparison.assignment_id)\
+            .filter(NotebookComparison.notebooks.any(name=notebook))\
+            .all()
+
+    def student_notebook_comparisons(self, notebook, assignment, student):
         """Return all notebook comparisons of a submitted notebook
         for a student.
 

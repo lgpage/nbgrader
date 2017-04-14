@@ -778,6 +778,7 @@ def test_add_notebook_comparison(assignment):
     assert n1.comparisons[0] == nc
     assert n2.comparisons[0] == nc
 
+
 def test_find_notebook_comparison(assignment):
     assignment.add_student('hacker123')
     assignment.add_student('bitdiddle')
@@ -790,6 +791,7 @@ def test_find_notebook_comparison(assignment):
     nc1 = assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
     nc2 = assignment.find_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
     assert nc2 == nc1
+
 
 def test_update_or_create_notebook_comparison(assignment):
     assignment.add_student('hacker123')
@@ -819,7 +821,8 @@ def test_update_or_create_notebook_comparison(assignment):
     assert len(n1.comparisons) == 1
     assert len(n2.comparisons) == 1
 
-def test_notebook_comparisons(assignment):
+
+def test_student_notebook_comparisons(assignment):
     assignment.add_student('hacker123')
     assignment.add_student('bitdiddle')
     assignment.add_student('foobar')
@@ -828,9 +831,9 @@ def test_notebook_comparisons(assignment):
     assignment.add_submission('foo', 'foobar')
     assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'bitdiddle'])
     assignment.add_notebook_comparison('p1', 'foo', ['hacker123', 'foobar'])
-    ncs1 = assignment.notebook_comparisons('p1', 'foo', 'hacker123')
-    ncs2 = assignment.notebook_comparisons('p1', 'foo', 'bitdiddle')
-    ncs3 = assignment.notebook_comparisons('p1', 'foo', 'foobar')
+    ncs1 = assignment.student_notebook_comparisons('p1', 'foo', 'hacker123')
+    ncs2 = assignment.student_notebook_comparisons('p1', 'foo', 'bitdiddle')
+    ncs3 = assignment.student_notebook_comparisons('p1', 'foo', 'foobar')
 
     assert len(ncs1) == 2
     assert len(ncs2) == 1
